@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type ApplicationStatus = 
     | "draft"
@@ -142,6 +142,18 @@ export default function ApplicationsPage() {
         selectedId,
     ]);
 
+    useEffect(() => {
+        if (!selectedId) return;
+
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape") setSelectedId(null);
+        };
+
+        window.addEventListener("keydown", onKeyDown);
+        
+        return () => window.removeEventListener("keydown", onKeyDown);
+    }, [selectedId]);
+
     return (
         <main className = "p-8">
             <div className = "flex items-end justify-between gap 4">
@@ -234,93 +246,113 @@ export default function ApplicationsPage() {
                 </table>
             </div>
 
-                    {/* Drawer */}
-            <aside className="w-[360px] shrink-0">
-                <div className="sticky top-8 rounded-xl border bg-white p-4">
-                {!selected ? (
-                    <div className="text-sm text-gray-600">
-                    <div className="font-medium text-gray-900">No application selected</div>
-                    <div className="mt-1">Click a row to view details.</div>
-                    </div>
-                ) : (
-                    <div className="space-y-4">
-                    <div className="flex items-start justify-between gap-3">
-                        <div>
-                        <div className="text-sm text-gray-500">{selected.company_name}</div>
-                        <div className="text-lg font-semibold">{selected.role_title}</div>
-                        </div>
+            {/* Drawer + overlay (shows only when selected) */}
+            {selected ? (
+            <>
+                {/* Backdrop */}
+                <div
+                className="fixed inset-0 bg-black/30"
+                onClick={() => setSelectedId(null)}
+                aria-hidden="true"
+                />
 
-                        <button
+                {/* Sliding panel */}
+                <aside className="fixed right-0 top-0 h-full w-[420px] max-w-[90vw] border-l bg-white shadow-xl">
+                <div className="h-full overflow-y-auto p-5">
+                    <div className="flex items-start justify-between gap-3">
+                    <div>
+                        <div className="text-sm text-gray-700">{selected.company_name}</div>
+                        <div className="text-lg font-semibold">{selected.role_title}</div>
+                    </div>
+
+                    <button
                         className="rounded-lg border px-3 py-1 text-sm hover:bg-gray-50"
                         onClick={() => setSelectedId(null)}
                         aria-label="Close"
                         title="Close"
-                        >
+                    >
                         Close
-                        </button>
+                    </button>
                     </div>
 
-                    <div className="flex flex-wrap gap-2">
-                        <span
+                    <div className="mt-4 flex flex-wrap gap-2">
+                    <span
                         className={`inline-flex items-center rounded-full border px-2 py-1 text-xs font-medium ${statusChipClass(
-                            selected.status
+                        selected.status
                         )}`}
-                        >
+                    >
                         {selected.status}
-                        </span>
-                        <span
+                    </span>
+                    <span
                         className={`inline-flex items-center rounded-full border px-2 py-1 text-xs font-medium ${priorityChipClass(
-                            selected.priority
+                        selected.priority
                         )}`}
-                        >
+                    >
                         P{selected.priority}
-                        </span>
+                    </span>
                     </div>
 
-                    <div className="space-y-2 text-sm">
-                        <div className="flex justify-between gap-4">
-                        <div className="text-gray-500">Next action</div>
+                    <div className="mt-5 space-y-2 text-sm">
+                    <div className="flex justify-between gap-4">
+                        <div className="text-gray-700">Next action</div>
+                        <div className="font-medium">{formatNextAction(selected.next_action_at).label}</div>
+                    </div>
+                    <div className="flex justify-between gap-4">
+                        <div className="text-gray-700">Last touch</div>
                         <div className="font-medium">
-                            {formatNextAction(selected.next_action_at).label}
+                        {selected.last_touch_at ? formatDateShort(new Date(selected.last_touch_at)) : "—"}
                         </div>
-                        </div>
-                        <div className="flex justify-between gap-4">
-                        <div className="text-gray-500">Last touch</div>
-                        <div className="font-medium">
-                            {selected.last_touch_at ? formatDateShort(new Date(selected.last_touch_at)) : "—"}
-                        </div>
-                        </div>
-                        <div className="flex justify-between gap-4">
-                        <div className="text-gray-500">Applied</div>
+                    </div>
+                    <div className="flex justify-between gap-4">
+                        <div className="text-gray-700">Applied</div>
                         <div className="font-medium">{selected.applied_at ?? "—"}</div>
-                        </div>
-                        <div className="flex justify-between gap-4">
-                        <div className="text-gray-500">Location / Mode</div>
+                    </div>
+                    <div className="flex justify-between gap-4">
+                        <div className="text-gray-700">Location / Mode</div>
                         <div className="font-medium">
-                            {[selected.location, selected.work_mode].filter(Boolean).join(" • ") || "—"}
-                        </div>
-                        </div>
-                    </div>
-
-                    <div>
-                        <div className="text-sm font-medium">Notes</div>
-                        <div className="mt-1 text-sm text-gray-700">
-                        {selected.notes ?? "—"}
+                        {[selected.location, selected.work_mode].filter(Boolean).join(" • ") || "—"}
                         </div>
                     </div>
+                    </div>
 
-                    <div className="flex gap-2">
-                        <button className="flex-1 rounded-lg bg-black px-3 py-2 text-sm text-white hover:opacity-90">
+                    <div className="mt-5">
+                    <div className="text-sm font-medium">Notes</div>
+                    <div className="mt-1 text-sm text-gray-700">{selected.notes ?? "—"}</div>
+                    </div>
+
+                    <div className="mt-6 flex gap-2">
+                    <button className="flex-1 rounded-lg bg-black px-3 py-2 text-sm text-white hover:opacity-90">
                         Open details
-                        </button>
-                        <button className="rounded-lg border px-3 py-2 text-sm hover:bg-gray-50">
+                    </button>
+                    <button className="rounded-lg border px-3 py-2 text-sm hover:bg-gray-50">
                         Quick edit
-                        </button>
+                    </button>
                     </div>
+
+                    <div className="mt-4 text-xs text-gray-700">
+                    Tip: press <span className="rounded border bg-gray-50 px-1 py-0.5">Esc</span> to close.
                     </div>
-                )}
                 </div>
-            </aside>
+                </aside>
+
+                {/* Slide-in animation via Tailwind (simple) */}
+                <style jsx global>{`
+                aside {
+                    animation: slideIn 160ms ease-out;
+                }
+                @keyframes slideIn {
+                    from {
+                    transform: translateX(12px);
+                    opacity: 0.6;
+                    }
+                    to {
+                    transform: translateX(0);
+                    opacity: 1;
+                    }
+                }
+                `}</style>
+            </>
+            ) : null}
 
         </main>
     );
