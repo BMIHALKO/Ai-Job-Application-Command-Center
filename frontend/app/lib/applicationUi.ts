@@ -20,14 +20,16 @@ export function statusTone(status: ApplicationStatus) {
 }
 
 export function priorityLabel(p: number) {
-    if (p >= 4) return "High";
+    if (p <= 1) return "High";
+    if (p === 2) return "High";
     if (p === 3) return "Medium";
     return "Low";
 }
 
 export function priorityTone(p: number) {
-    if (p >= 4) return "danger";
-    if (p === 3) return "warning";
+    if (p <= 1) return "danger";
+    if (p === 2) return "warning";
+    if (p === 3) return "neutral";
     return "neutral";
 }
 

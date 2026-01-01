@@ -3,6 +3,8 @@ import Link from "next/link";
 
 import { MOCK_APPLICATIONS } from "./data";
 import FilterBar, { type ApplicationFilters } from "./FilterBar";
+import { Badge } from "../components/application/DetailBits";
+import { priorityLabel, priorityTone, statusTone } from "../lib/applicationUi";
 
 import { useEffect, useMemo, useState } from "react";
 
@@ -57,36 +59,6 @@ function formatNextAction(nextActionISO: string | null) {
     if (dayDiff === 1) return { label: "Tomorrow", tone: "neutral" as const };
 
     return { label: formatDateShort(due), tone: "neutral" as const }
-}
-
-function statusChipClass(status: ApplicationStatus) {
-    switch (status) {
-        case "offer":
-            return "bg-green-50 text-green-700 border-green-200";
-        case "interview":
-            return "bg-blue-50 text-blue-700 border-blue-200";
-        case "screen":
-            return "bg-indigo-50 text-indigo-700 border-indigo-200";
-        case "applied":
-            return "bg-gray-50 text-gray-700 border-gray-200";
-        case "draft":
-            return "bg-slate-50 text-slate-700 border-slate-200";
-        case "rejected":
-        case "withdrawn":
-            return "bg-red-50 text-red-700 border-red-200";
-        case "ghosted":
-            return "bg-amber-50 text-amber-800 border-amber-200";
-        default:
-            return "bg-gray-50 text-gray-700 border-gray-200";
-    }
-}
-
-function priorityChipClass(priority: number) {
-    if (priority <= 1) return "bg-red-50 text-red-700 border-red-200";
-    if (priority === 2) return "bg-amber-50 text-amber-800 border-amber-200";
-    if (priority === 3) return "bg-gray-50 text-gray-700 border-gray-200";
-
-    return "bg-slate-50 text-slate-600 border-slate-200";
 }
 
 function toneChipClass(tone: "neutral" | "warning" | "danger") {
@@ -219,22 +191,13 @@ export default function ApplicationsPage() {
                                     <td className = "px-4 py-3">{row.role_title}</td>
 
                                     <td className = "px-4 py-3">
-                                        <span
-                                            className = {`inline-flex items-center rounded-full border px-2 py-1 text-xs font-medium ${statusChipClass(row.status
-
-                                            )}`}
-                                        >
-                                            {row.status}
-                                        </span>
+                                        <Badge tone = {statusTone(row.status)}>{row.status}</Badge>
                                     </td>
 
                                     <td className = "px-4 py-3">
-                                        <span
-                                            className = {`inline-flex items-center rounded-full border px-2 py-1 text-xs font-medium ${priorityChipClass(row.priority
-                                            )}`}
-                                        >
-                                            P{row.priority}
-                                        </span>
+                                        <Badge tone = {priorityTone(row.priority)}>
+                                            {priorityLabel(row.priority)} (P{row.priority})
+                                        </Badge>
                                     </td>
 
                                     <td className = "px-4 py-3">
@@ -295,20 +258,11 @@ export default function ApplicationsPage() {
                     </div>
 
                     <div className="mt-4 flex flex-wrap gap-2">
-                    <span
-                        className={`inline-flex items-center rounded-full border px-2 py-1 text-xs font-medium ${statusChipClass(
-                        selected.status
-                        )}`}
-                    >
-                        {selected.status}
-                    </span>
-                    <span
-                        className={`inline-flex items-center rounded-full border px-2 py-1 text-xs font-medium ${priorityChipClass(
-                        selected.priority
-                        )}`}
-                    >
-                        P{selected.priority}
-                    </span>
+                        <Badge tone = {statusTone(selected.status)}>{selected.status}</Badge>
+
+                        <Badge tone = {priorityTone(selected.priority)}>
+                            {priorityLabel(selected.priority)} (P{selected.priority})
+                        </Badge>
                     </div>
 
                     <div className="mt-5 space-y-2 text-sm">
