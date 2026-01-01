@@ -75,7 +75,7 @@ export default async function ApplicationDetailPage({
             <Badge tone = {priorityTone(app.priority)}>
               Priority: {priorityLabel(app.priority)}
             </Badge>
-            {app.work_mode ? <Badge tone="neutral">{app.work_mode}</Badge> : null}
+            {app.work_mode ? <Badge tone = "neutral">{app.work_mode}</Badge> : null}
           </div>
         </div>
       </div>

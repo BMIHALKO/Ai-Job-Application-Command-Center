@@ -23,20 +23,20 @@ export type ApplicationRow = {
 };
 
 export const MOCK_APPLICATIONS: ApplicationRow[] = [
-    {
-        application_id: "1",
-        company_name: "IBM",
-        role_title: "Entry Level Software Engineer 2026",
-        status: "rejected",
-        priority: 1,
-        applied_at: "2025-12-29",
-        last_touch_at: "2025-12-31T15:47:00Z",
-        next_action_at: null,
-        location: "Poughkeepsie, NY / Austin, TX",
-        work_mode: "hybrid",
-        notes: "Applied Dec 29, rejected two days later. Entry Level EDA-focused role within IBM Systems.",
-    },
-      {
+  {
+    application_id: "1",
+    company_name: "IBM",
+    role_title: "Entry Level Software Engineer 2026",
+    status: "rejected",
+    priority: 1,
+    applied_at: "2025-12-29",
+    last_touch_at: "2025-12-31T15:47:00Z",
+    next_action_at: null,
+    location: "Poughkeepsie, NY / Austin, TX",
+    work_mode: "hybrid",
+    notes: "Applied Dec 29, rejected two days later. Entry Level EDA-focused role within IBM Systems.",
+  },
+  {
     application_id: "2",
     company_name: "Another Corp",
     role_title: "Frontend Engineer",
@@ -47,7 +47,12 @@ export const MOCK_APPLICATIONS: ApplicationRow[] = [
     next_action_at: "2025-12-29T12:00:00Z",
     location: "Remote",
     work_mode: "remote",
-    notes: "Recruiter reached out on LinkedIn. Waiting on next steps.",
+    notes: `Recruiter call went well.
+    Asked about team structure.
+
+    Follow up:
+    - Send thank-you email
+    - Ask about next steps`,
   },
   {
     application_id: "3",

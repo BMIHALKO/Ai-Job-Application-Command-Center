@@ -240,72 +240,81 @@ export default function ApplicationsPage() {
 
                 {/* Sliding panel */}
                 <aside className="fixed right-0 top-0 h-full w-[420px] max-w-[90vw] border-l bg-white shadow-xl">
-                <div className="h-full overflow-y-auto p-5">
-                    <div className="flex items-start justify-between gap-3">
-                    <div>
-                        <div className="text-sm text-gray-700">{selected.company_name}</div>
-                        <div className="text-lg font-semibold">{selected.role_title}</div>
-                    </div>
+                    <div className="h-full overflow-y-auto p-5">
+                        <div className="flex items-start justify-between gap-3">
+                            <div>
+                                <div className="text-sm text-gray-700">{selected.company_name}</div>
+                                <div className="text-lg font-semibold">{selected.role_title}</div>
+                            </div>
 
-                    <button
-                        className="rounded-lg border px-3 py-1 text-sm hover:bg-gray-50"
-                        onClick={() => setSelectedId(null)}
-                        aria-label="Close"
-                        title="Close"
-                    >
-                        Close
-                    </button>
-                    </div>
+                            <button
+                                className="rounded-lg border px-3 py-1 text-sm hover:bg-gray-50"
+                                onClick={() => setSelectedId(null)}
+                                aria-label="Close"
+                                title="Close"
+                            >
+                                Close
+                            </button>
+                        </div>
 
-                    <div className="mt-4 flex flex-wrap gap-2">
-                        <Badge tone = {statusTone(selected.status)}>{selected.status}</Badge>
+                        <div className="mt-4 flex flex-wrap gap-2">
+                            <Badge tone = {statusTone(selected.status)}>{selected.status}</Badge>
 
-                        <Badge tone = {priorityTone(selected.priority)}>
-                            {priorityLabel(selected.priority)} (P{selected.priority})
-                        </Badge>
-                    </div>
+                            <Badge tone = {priorityTone(selected.priority)}>
+                                {priorityLabel(selected.priority)} (P{selected.priority})
+                            </Badge>
+                        </div>
 
-                    <div className="mt-5 space-y-2 text-sm">
-                    <div className="flex justify-between gap-4">
-                        <div className="text-gray-700">Next action</div>
-                        <div className="font-medium">{formatNextAction(selected.next_action_at).label}</div>
-                    </div>
-                    <div className="flex justify-between gap-4">
-                        <div className="text-gray-700">Last touch</div>
-                        <div className="font-medium">
-                        {selected.last_touch_at ? formatDateShort(new Date(selected.last_touch_at)) : "—"}
+                        <div className="mt-5 space-y-2 text-sm">
+                            <div className="flex justify-between gap-4">
+                                <div className="text-gray-700">Next action</div>
+                                <div className="font-medium">{formatNextAction(selected.next_action_at).label}</div>
+                            </div>
+                            <div className="flex justify-between gap-4">
+                                <div className="text-gray-700">Last touch</div>
+                                <div className="font-medium">
+                                {selected.last_touch_at ? formatDateShort(new Date(selected.last_touch_at)) : "—"}
+                                </div>
+                            </div>
+                            <div className="flex justify-between gap-4">
+                                <div className="text-gray-700">Applied</div>
+                                <div className="font-medium">{selected.applied_at ?? "—"}</div>
+                            </div>
+                            <div className="flex justify-between gap-4">
+                                <div className="text-gray-700">Location / Mode</div>
+                                <div className="font-medium">
+                                {[selected.location, selected.work_mode].filter(Boolean).join(" • ") || "—"}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="mt-5">
+                            <div className="text-sm font-medium">Notes</div>
+
+                            {selected.notes?.trim() ? (
+                                <p className = "mt-1 whitespace-pre-wrap text-sm text-gray-700">
+                                    {selected.notes}
+                                </p>
+                            ) : (
+                                <p className = "mt-1 text-sm text-gray-500">
+                                    No notes yet. Add key details after screens/interviews.
+                                </p>
+                            )}
+                        </div>
+
+                        <div className="mt-6 flex gap-2">
+                            <Link href = {`/applications/${selected.application_id}`} className = "flex-1 rounded-lg bg-black px-3 py-2 text-center text-sm text-white hover:opacity-90">
+                                Open Details
+                            </Link>
+                            <button className="rounded-lg border px-3 py-2 text-sm hover:bg-gray-50">
+                                Quick edit
+                            </button>
+                        </div>
+
+                        <div className="mt-4 text-xs text-gray-700">
+                            Tip: press <span className="rounded border bg-gray-50 px-1 py-0.5">Esc</span> to close.
                         </div>
                     </div>
-                    <div className="flex justify-between gap-4">
-                        <div className="text-gray-700">Applied</div>
-                        <div className="font-medium">{selected.applied_at ?? "—"}</div>
-                    </div>
-                    <div className="flex justify-between gap-4">
-                        <div className="text-gray-700">Location / Mode</div>
-                        <div className="font-medium">
-                        {[selected.location, selected.work_mode].filter(Boolean).join(" • ") || "—"}
-                        </div>
-                    </div>
-                    </div>
-
-                    <div className="mt-5">
-                    <div className="text-sm font-medium">Notes</div>
-                    <div className="mt-1 text-sm text-gray-700">{selected.notes ?? "—"}</div>
-                    </div>
-
-                    <div className="mt-6 flex gap-2">
-                    <Link href = {`/applications/${selected.application_id}`} className = "flex-1 rounded-lg bg-black px-3 py-2 text-center text-sm text-white hover:opacity-90">
-                        Open Details
-                    </Link>
-                    <button className="rounded-lg border px-3 py-2 text-sm hover:bg-gray-50">
-                        Quick edit
-                    </button>
-                    </div>
-
-                    <div className="mt-4 text-xs text-gray-700">
-                    Tip: press <span className="rounded border bg-gray-50 px-1 py-0.5">Esc</span> to close.
-                    </div>
-                </div>
                 </aside>
 
                 {/* Slide-in animation via Tailwind (simple) */}
