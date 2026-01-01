@@ -1,4 +1,6 @@
 "use client";
+import Link from "next/link";
+import { MOCK_APPLICATIONS } from "./data";
 import { useEffect, useMemo, useState } from "react";
 
 type ApplicationStatus = 
@@ -25,48 +27,6 @@ type ApplicationRow = {
     notes?: string | null;
 };
 
-const MOCK: ApplicationRow[] = [
-    {
-      application_id: "1",
-      company_name: "Example Co",
-      role_title: "Software Engineer",
-      status: "applied",
-      priority: 2,
-      applied_at: "2025-12-20",
-      last_touch_at: "2025-12-22T14:30:00Z",
-      next_action_at: "2025-12-30T15:00:00Z",
-      location: "Charlotte, NC",
-      work_mode: "hybrid",
-      notes: "Follow up if no response by end of week.",
-    },
-    {
-      application_id: "2",
-      company_name: "Another Corp",
-      role_title: "Frontend Engineer",
-      status: "screen",
-      priority: 1,
-      applied_at: "2025-12-10",
-      last_touch_at: "2025-12-18T16:00:00Z",
-      next_action_at: "2025-12-29T12:00:00Z",
-      location: "Remote",
-      work_mode: "remote",
-      notes: "Recruiter reached out on LinkedIn. Waiting on next steps."
-    },
-    {
-      application_id: "3",
-      company_name: "No Response LLC",
-      role_title: "Backend Engineer",
-      status: "ghosted",
-      priority: 3,
-      applied_at: "2025-11-30",
-      last_touch_at: "2025-12-02T18:00:00Z",
-      next_action_at: "2025-12-20T12:00:00Z",
-      location: "Charlotte, NC",
-      work_mode: "on-site",
-      notes: "Send one last check-in, then mark as ghosted."
-    },
-];
-
 function formatDateShort(d: Date) {
     return d.toLocaleDateString(undefined, {month: "short", day: "numeric"});
 }
@@ -79,7 +39,7 @@ function formatNextAction(nextActionISO: string | null) {
 
     // normalize to dates for "today/tomorrow"
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const startOfDue = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfDue = new Date(due.getFullYear(), due.getMonth(), due.getDate());
 
     const msPerDay = 24 * 60 * 60 * 1000;
     const dayDiff = Math.round((startOfDue.getTime() - startOfToday.getTime()) / msPerDay);
@@ -128,13 +88,13 @@ function priorityChipClass(priority: number) {
 
 function toneChipClass(tone: "neutral" | "warning" | "danger") {
     if (tone === "danger") return "bg-red-50 text-red-700 border-red-200";
-    if (tone == "warning") return "bg-amber-50 text-amber-800 border-amber-200";
+    if (tone === "warning") return "bg-amber-50 text-amber-800 border-amber-200";
 
     return "bg-gray-50 text-gray-700 border-gray-200";
 }
 
 export default function ApplicationsPage() {
-    const rows = useMemo(() => MOCK, []);
+    const rows = useMemo(() => MOCK_APPLICATIONS, []);
     const [selectedId, setSelectedId] = useState < string | null > (null);
 
     const selected = useMemo(() => rows.find((r) => r.application_id === selectedId) ?? null, [
@@ -156,7 +116,7 @@ export default function ApplicationsPage() {
 
     return (
         <main className = "p-8">
-            <div className = "flex items-end justify-between gap 4">
+            <div className = "flex items-end justify-between gap-4">
                 <div>
                     <h1 className = "text-2xl font-semibold">Applications</h1>
                     <p className = "mt-1 text-sm text-gray-600">
@@ -169,7 +129,7 @@ export default function ApplicationsPage() {
                 </button>
             </div>
 
-            <div className = "mt-6 overflow-x-auto rounded-x1 border bg-white">
+            <div className = "mt-6 overflow-x-auto rounded-xl border bg-white">
                 <table className = "min-w-full text-sm">
                     <thead className = "bg-gray-50 text-gray-700">
                         <tr className = "text-left">
@@ -321,9 +281,9 @@ export default function ApplicationsPage() {
                     </div>
 
                     <div className="mt-6 flex gap-2">
-                    <button className="flex-1 rounded-lg bg-black px-3 py-2 text-sm text-white hover:opacity-90">
-                        Open details
-                    </button>
+                    <Link href = {`/applications/${selected.application_id}`} className = "flex-1 rounded-lg bg-black px-3 py-2 text-center text-sm text-white hover:opacity-90">
+                        Open Details
+                    </Link>
                     <button className="rounded-lg border px-3 py-2 text-sm hover:bg-gray-50">
                         Quick edit
                     </button>
