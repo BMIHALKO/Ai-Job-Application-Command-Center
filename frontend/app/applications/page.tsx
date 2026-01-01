@@ -1,6 +1,9 @@
 "use client";
 import Link from "next/link";
+
 import { MOCK_APPLICATIONS } from "./data";
+import FilterBar, { type ApplicationFilters } from "./FilterBar";
+
 import { useEffect, useMemo, useState } from "react";
 
 type ApplicationStatus = 
@@ -94,13 +97,56 @@ function toneChipClass(tone: "neutral" | "warning" | "danger") {
 }
 
 export default function ApplicationsPage() {
-    const rows = useMemo(() => MOCK_APPLICATIONS, []);
+    const allRows = useMemo(() => MOCK_APPLICATIONS, []);
+
+    const DEFAULT_FILTERS: ApplicationFilters = {
+        search: "",
+        status: "all",
+        priority: "all",
+        workMode: "all",
+    };
+
+    const [filters, setFilters] = useState<ApplicationFilters>(DEFAULT_FILTERS);
+
+    const rows = useMemo(() => {
+        const q = filters.search.trim().toLowerCase();
+
+        return allRows.filter((r) => {
+            // status
+            if (filters.status !== "all" && r.status !== filters.status) return false;
+
+            // priority
+            if (filters.priority !== "all" && r.priority !== filters.priority) return false;
+
+            // work mode (normalize null + casing)
+            if (filters.workMode !== "all") {
+                const mode = (r.work_mode ?? "").toLowerCase();
+                if (mode !== filters.workMode) return false;
+            }
+
+            // search (company or role)
+            if (q) {
+                const company = r.company_name.toLowerCase();
+                const role = r.role_title.toLowerCase();
+                if (!company.includes(q) && !role.includes(q)) return false;
+            }
+
+            return true;
+        });
+    }, [allRows, filters]);
+
     const [selectedId, setSelectedId] = useState < string | null > (null);
 
     const selected = useMemo(() => rows.find((r) => r.application_id === selectedId) ?? null, [
         rows,
         selectedId,
     ]);
+
+    useEffect(() => {
+        if (!selectedId) return;
+        const stillVisible = rows.some((r) => r.application_id === selectedId);
+        if (!stillVisible) setSelectedId(null);
+    }, [rows, selectedId]);
 
     useEffect(() => {
         if (!selectedId) return;
@@ -116,6 +162,7 @@ export default function ApplicationsPage() {
 
     return (
         <main className = "p-8">
+            {/* Header Row */}
             <div className = "flex items-end justify-between gap-4">
                 <div>
                     <h1 className = "text-2xl font-semibold">Applications</h1>
@@ -128,6 +175,18 @@ export default function ApplicationsPage() {
                     + New Application
                 </button>
             </div>
+
+            <FilterBar
+                filters = {filters}
+                onChange = {(next) => {
+                    setSelectedId(null);
+                    setFilters(next);
+                }}
+                onReset = {() => {
+                    setSelectedId(null);
+                    setFilters(DEFAULT_FILTERS);
+                }}
+            />
 
             <div className = "mt-6 overflow-x-auto rounded-xl border bg-white">
                 <table className = "min-w-full text-sm">
