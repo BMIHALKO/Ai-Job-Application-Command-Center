@@ -160,73 +160,108 @@ export default function ApplicationsPage() {
                 }}
             />
 
-            <div className = "mt-6 overflow-x-auto rounded-xl border bg-white">
-                <table className = "min-w-full text-sm">
-                    <thead className = "bg-gray-50 text-gray-700">
-                        <tr className = "text-left">
-                            <th className = "px-4 py-3">Company</th>
-                            <th className = "px-4 py-3">Role</th>
-                            <th className = "px-4 py-3">Status</th>
-                            <th className = "px-4 py-3">Priority</th>
-                            <th className = "px-4 py-3">Next Action</th>
-                            <th className = "px-4 py-3">Last Touch</th>
-                            <th className = "px-4 py-3">Applied</th>
-                            <th className = "px-4 py-3">Location</th>
-                        </tr>
-                    </thead>
+            {rows.length === 0 ? (
+                <div className = "mt-6 rounded-x1 border bg-white p-6">
+                    <div className = "text-sm font-medium text-gray-900">
+                        No applications match your filters.
+                    </div>
+                    <div className = "mt-1 text-sm text-gray-600">
+                        Try clearing filters or adjusting your search.
+                    </div>
 
-                    <tbody className = "text-gray-900">
-                        {rows.map((row) => {
-                            const next = formatNextAction(row.next_action_at);
-                            const isSelected = row.application_id === selectedId;
+                    <div className = "mt-4 flex gap-2">
+                        <button
+                            className = "rounded-lg bg-black px-4 py-2 text-sm text-white hover:opacity-90"
+                            onClick = {() => {
+                                setSelectedId(null);
+                                setFilters(DEFAULT_FILTERS);
+                            }}
+                        >
+                            Reset Filters
+                        </button>
 
-                            return (
-                                <tr key = {row.application_id} className={[
-                                    "border-t hover:bg-gray-50 cursor-pointer",
-                                    isSelected ? "bg-gray-50" : "",
-                                  ].join(" ")}
-                                  onClick={() => setSelectedId(row.application_id)}
-                                  >
-                                    <td className = "px-4 font-medium">{row.company_name}</td>
-                                    <td className = "px-4 py-3">{row.role_title}</td>
+                        <button
+                            className = "rounded-lg border px-4 py-2 text-sm hover:bg-gray-50"
+                            onClick={() => {
+                                setFilters((prev) => ({
+                                    ...prev,
+                                    search: "",
+                                }))
+                            }}
+                        >
+                            Clear search
+                        </button>
+                    </div>
+                </div>
+            ) : (
+                <div className = "mt-6 overflow-x-auto rounded-xl border bg-white">
+                    <table className = "min-w-full text-sm">
+                        <thead className = "bg-gray-50 text-gray-700">
+                            <tr className = "text-left">
+                                <th className = "px-4 py-3">Company</th>
+                                <th className = "px-4 py-3">Role</th>
+                                <th className = "px-4 py-3">Status</th>
+                                <th className = "px-4 py-3">Priority</th>
+                                <th className = "px-4 py-3">Next Action</th>
+                                <th className = "px-4 py-3">Last Touch</th>
+                                <th className = "px-4 py-3">Applied</th>
+                                <th className = "px-4 py-3">Location</th>
+                            </tr>
+                        </thead>
 
-                                    <td className = "px-4 py-3">
-                                        <Badge tone = {statusTone(row.status)}>{row.status}</Badge>
-                                    </td>
+                        <tbody className = "text-gray-900">
+                            {rows.map((row) => {
+                                const next = formatNextAction(row.next_action_at);
+                                const isSelected = row.application_id === selectedId;
 
-                                    <td className = "px-4 py-3">
-                                        <Badge tone = {priorityTone(row.priority)}>
-                                            {priorityLabel(row.priority)} (P{row.priority})
-                                        </Badge>
-                                    </td>
+                                return (
+                                    <tr key = {row.application_id} className={[
+                                        "border-t hover:bg-gray-50 cursor-pointer",
+                                        isSelected ? "bg-gray-50" : "",
+                                    ].join(" ")}
+                                    onClick={() => setSelectedId(row.application_id)}
+                                    >
+                                        <td className = "px-4 font-medium">{row.company_name}</td>
+                                        <td className = "px-4 py-3">{row.role_title}</td>
 
-                                    <td className = "px-4 py-3">
-                                        <span
-                                            className = {`inline-flex items-center rounded-full border px-2 py-1 text-xs font-medium ${toneChipClass(
-                                                next.tone
-                                            )}`}
-                                        >
-                                            {next.label}
-                                        </span>
-                                    </td>
+                                        <td className = "px-4 py-3">
+                                            <Badge tone = {statusTone(row.status)}>{row.status}</Badge>
+                                        </td>
 
-                                    <td className = "px-4 text-gray-700">
-                                        {row.last_touch_at ? formatDateShort(new Date(row.last_touch_at)) : "—"}
-                                    </td>
+                                        <td className = "px-4 py-3">
+                                            <Badge tone = {priorityTone(row.priority)}>
+                                                {priorityLabel(row.priority)} (P{row.priority})
+                                            </Badge>
+                                        </td>
 
-                                    <td className = "px-4 py-3 text-gray-700">
-                                        {row.applied_at ?? "—"}
-                                    </td>
+                                        <td className = "px-4 py-3">
+                                            <span
+                                                className = {`inline-flex items-center rounded-full border px-2 py-1 text-xs font-medium ${toneChipClass(
+                                                    next.tone
+                                                )}`}
+                                            >
+                                                {next.label}
+                                            </span>
+                                        </td>
 
-                                    <td className = "px-4 py-3 text-gray-700">
-                                        {[row.location, row.work_mode].filter(Boolean).join(" • ") || "—"}
-                                    </td>
-                                </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
-            </div>
+                                        <td className = "px-4 text-gray-700">
+                                            {row.last_touch_at ? formatDateShort(new Date(row.last_touch_at)) : "—"}
+                                        </td>
+
+                                        <td className = "px-4 py-3 text-gray-700">
+                                            {row.applied_at ?? "—"}
+                                        </td>
+
+                                        <td className = "px-4 py-3 text-gray-700">
+                                            {[row.location, row.work_mode].filter(Boolean).join(" • ") || "—"}
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+            )}
 
             {/* Drawer + overlay (shows only when selected) */}
             {selected ? (
