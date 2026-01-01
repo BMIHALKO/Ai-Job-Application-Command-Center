@@ -196,7 +196,7 @@ export default function ApplicationsPage() {
             ) : (
                 <div className = "mt-6 overflow-x-auto rounded-xl border bg-white">
                     <table className = "min-w-full text-sm">
-                        <thead className = "bg-gray-50 text-gray-700">
+                        <thead className = "bg-gray-50 text-sm font-medium uppercase tracking-wide text-gray-600">
                             <tr className = "text-left">
                                 <th className = "px-4 py-3">Company</th>
                                 <th className = "px-4 py-3">Role</th>
@@ -221,30 +221,36 @@ export default function ApplicationsPage() {
                                     ].join(" ")}
                                     onClick={() => setSelectedId(row.application_id)}
                                     >
-                                        <td className = "px-4 font-medium">{row.company_name}</td>
+                                        <td className = "px-4 py-3 font-medium">{row.company_name}</td>
                                         <td className = "px-4 py-3">{row.role_title}</td>
 
                                         <td className = "px-4 py-3">
-                                            <Badge tone = {statusTone(row.status)}>{row.status}</Badge>
+                                            <div className = "flex items-center">
+                                                <Badge tone = {statusTone(row.status)}>{row.status}</Badge>
+                                            </div>
                                         </td>
 
                                         <td className = "px-4 py-3">
-                                            <Badge tone = {priorityTone(row.priority)}>
-                                                {priorityLabel(row.priority)} (P{row.priority})
-                                            </Badge>
+                                            <div className = "flex items-center">
+                                                <Badge tone = {priorityTone(row.priority)}>
+                                                    {priorityLabel(row.priority)} (P{row.priority})
+                                                </Badge>
+                                            </div>
                                         </td>
 
                                         <td className = "px-4 py-3">
-                                            <span
-                                                className = {`inline-flex items-center rounded-full border px-2 py-1 text-xs font-medium ${toneChipClass(
-                                                    next.tone
-                                                )}`}
-                                            >
-                                                {next.label}
-                                            </span>
+                                            <div className = "flex items-center">
+                                                <span
+                                                    className = {`inline-flex items-center rounded-full border px-2 py-1 text-xs font-medium ${toneChipClass(
+                                                        next.tone
+                                                    )}`}
+                                                >
+                                                    {next.label}
+                                                </span>
+                                            </div>
                                         </td>
 
-                                        <td className = "px-4 text-gray-700">
+                                        <td className = "px-4 py-3 text-gray-700">
                                             {row.last_touch_at ? formatDateShort(new Date(row.last_touch_at)) : "—"}
                                         </td>
 
@@ -300,7 +306,7 @@ export default function ApplicationsPage() {
                             </Badge>
                         </div>
 
-                        <div className="mt-5 space-y-2 text-sm">
+                        <div className="mt-5 space-y-3 text-sm">
                             <div className="flex justify-between gap-4">
                                 <div className="text-gray-700">Next action</div>
                                 <div className="font-medium">{formatNextAction(selected.next_action_at).label}</div>
