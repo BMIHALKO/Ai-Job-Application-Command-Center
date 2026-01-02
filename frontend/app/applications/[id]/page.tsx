@@ -6,6 +6,7 @@ import {
   formatDate,
   priorityLabel,
   priorityTone,
+  statusLabel,
   statusTone,
 } from "../../lib/applicationUi";
 
@@ -21,13 +22,31 @@ export default async function ApplicationDetailPage({
   if (!app) {
     return (
       <main className = "p-8">
-        <div className = "text-sm text-gray-800">Application not found.</div>
-        <Link
-          href = "/applications"
-          className = "mt-4 inline-flex rounded-lg border px-4 py-2 text-sm hover:bg-gray-50"
-        >
-          ← Back to Applications
-        </Link>
+        <div className = "rounded-2xl border bg-white p-6">
+          <div className = "text-xs font-medium text-neutral-500">
+            Not found
+          </div>
+          <h1 className = "mt-2 text-xl font-semibold text-neutral-900">
+            Application not found
+          </h1>
+          <p className = "mt-2 text-sm text-neutral-700">
+            We couldn't find an application with ID{" "}
+            <span className = "rounded border bg-neutral-50 px-1.5 py-0.5 font-mono text-xs">
+              {id}
+            </span>
+            . It may have been removed or the link is incorrect.
+          </p>
+
+          <div>
+            <Link href = "/application" className = "inline-flex items-center rounded-lg bg-black px-4 py-2 text-sm text-white hover:opacity-90">
+              ← Back to Application
+            </Link>
+
+            <Link href = "/applications" className = "inline-flex items-center rounded-lg border px-4 py-2 text-sm hover:bg-gray-50">
+              View all applications
+            </Link>
+          </div>
+        </div>
       </main>
     );
   }
@@ -71,7 +90,7 @@ export default async function ApplicationDetailPage({
           </div>
 
           <div className = "flex flex-wrap gap-2">
-            <Badge tone = {statusTone(app.status)}>{app.status}</Badge>
+            <Badge tone = {statusTone(app.status)}>{statusLabel(app.status)}</Badge>
             <Badge tone = {priorityTone(app.priority)}>
               Priority: {priorityLabel(app.priority)}
             </Badge>
@@ -86,7 +105,7 @@ export default async function ApplicationDetailPage({
           <div className = "grid grid-cols-2 gap-4">
             <KV
               label = "Status"
-              value = {<Badge tone = {statusTone(app.status)}>{app.status}</Badge>}
+              value = {<Badge tone = {statusTone(app.status)}>{statusLabel(app.status)}</Badge>}
             />
             <KV
               label = "Priority"
