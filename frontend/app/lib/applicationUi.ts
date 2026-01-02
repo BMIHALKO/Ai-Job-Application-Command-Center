@@ -1,37 +1,59 @@
 import type { ApplicationStatus } from "../applications/data";
 
-export function statusTone(status: ApplicationStatus) {
-    switch (status) {
-        case "offer":
-            return "success";
-        case "interview":
-        case "screen":
-            return "info";
-        case "rejected":
-            return "danger";
-        case "withdrawn":
-        case "ghosted":
-            return "warning";
-        case "applied":
-        case "draft":
-        default:
-            return "neutral";
-    }
+/* ---------- Types ---------- */
+
+export type Tone = 
+    | "gray"
+    | "blue"
+    | "green"
+    | "yellow"
+    | "red"
+    | "purple";
+
+/* ---------- Centralized Metadata ---------- */
+
+const  STATUS_META: Record<
+    ApplicationStatus,
+    { label: string; tone: Tone }
+> = {
+    draft: { label: "Draft", tone: "gray" },
+    applied: { label: "Applied", tone: "blue" },
+    screen: { label: "Screen", tone: "purple" },
+    interview: { label: "Interview", tone: "yellow" },
+    offer: { label: "Offer", tone: "green" },
+    rejected: { label: "Rejected", tone: "red" },
+    withdrawn: { label: "Withdrawn", tone: "gray" },
+    ghosted: { label: "Ghosted", tone: "gray" },
+};
+
+const PRIORITY_META: Record<
+    number,
+    { label: string; tone: Tone }
+> = {
+    1: { label: "Low", tone: "gray" },
+    2: { label: "Medium", tone: "yellow" },
+    3: { label: "High", tone: "red" },
+};
+
+/* ---------- Public Helpers ---------- */
+
+export function statusLabel(status: ApplicationStatus) {
+    return STATUS_META[status]?.label ?? "Unknown";
 }
 
-export function priorityLabel(p: number) {
-    if (p <= 1) return "High";
-    if (p === 2) return "High";
-    if (p === 3) return "Medium";
-    return "Low";
+export function statusTone(status: ApplicationStatus): Tone {
+    return STATUS_META[status]?.tone ?? "gray";
 }
 
-export function priorityTone(p: number) {
-    if (p <= 1) return "danger";
-    if (p === 2) return "warning";
-    if (p === 3) return "neutral";
-    return "neutral";
+export function priorityLabel(priority: number) {
+    return PRIORITY_META[priority]?.label ?? "Unknown";
 }
+
+export function priorityTone(priority: number): Tone {
+    return PRIORITY_META[priority]?.tone ?? "gray";
+}
+
+/* ---------- Utilities ---------- */
 
 export function formatDate(iso: string | null) {
     if (!iso) return "—";

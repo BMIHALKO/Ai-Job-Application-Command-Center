@@ -75,7 +75,7 @@ export default async function ApplicationDetailPage({
             <Badge tone = {priorityTone(app.priority)}>
               Priority: {priorityLabel(app.priority)}
             </Badge>
-            {app.work_mode ? <Badge tone = "neutral">{app.work_mode}</Badge> : null}
+            {app.work_mode ? <Badge tone = "gray">{app.work_mode}</Badge> : null}
           </div>
         </div>
       </div>
@@ -112,15 +112,17 @@ export default async function ApplicationDetailPage({
       </div>
 
       <Section title = "Notes">
-        {app.notes?.trim() ? (
-          <p className = "whitespace-pre-wrap text-sm text-neutral-800">
-            {app.notes}
-          </p>
-        ) : (
-          <p className = "text-sm text-neutral-500">
-            No notes yet. Add key details after screens/interviews.
-          </p>
-        )}
+        <div className = "rounded-x1 border bg-white p-4">
+          {app.notes && app.notes.trim().length > 0 ? (
+            <div className = "text-sm text-gray-800 whitespace-pre-line">
+              {app.notes}
+            </div>
+          ) : (
+            <div className = "text-sm text-gray-500 italic">
+              No notes added yet.
+            </div>
+          )}
+        </div>
       </Section>
     </main>
   );

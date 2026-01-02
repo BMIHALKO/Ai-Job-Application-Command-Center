@@ -1,18 +1,20 @@
 import * as React from "react";
+import type { Tone } from "../../lib/applicationUi";
 
-type BadgeTone = "neutral" | "success" | "warning" | "danger" | "info";
+export type BadgeTone = Tone;
 
 const toneClasses: Record<BadgeTone, string> = {
-    neutral: "bg-neutral-100 text-neutral-800 border-neutral-200",
-    success: "bg-emerald-100 text-emerald-900 border-emerald-200",
-    warning: "bg-amber-100 text-amber-900 border-amber-200",
-    danger: "bg-rose-100 text-rose-900 border-rose-200",
-    info: "bg-sky-100 text-sky-900 border-sky-200",
+    gray: "border-gray-200 bg-gray-50 text-gray-700",
+    blue: "border-blue-200 bg-blue-50 text-blue-700",
+    green: "border-green-200 bg-green-50 text-green-700",
+    yellow: "border-yellow-200 bg-yellow-50 text-yellow-800",
+    red: "border-red-200 bg-red-50 text-red-700",
+    purple: "border-purple-200 bg-purple-50 text-purple-700",
 };
 
 export function Badge({
     children,
-    tone = "neutral",
+    tone = "gray",
 }: {
     children: React.ReactNode;
     tone?: BadgeTone;

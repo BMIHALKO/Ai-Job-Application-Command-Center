@@ -65,6 +65,6 @@ export const MOCK_APPLICATIONS: ApplicationRow[] = [
     next_action_at: "2025-12-20T12:00:00Z",
     location: "Charlotte, NC",
     work_mode: "onsite",
-    notes: "Send one last check-in, then mark as ghosted.",
+    notes: "Followed up on 12/31.\nRecruiter said next steps soon.\nPrep system design.",
   },
 ]
