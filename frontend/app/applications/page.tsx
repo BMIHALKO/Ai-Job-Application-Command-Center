@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 
-import { MOCK_APPLICATIONS } from "./data";
+import { MOCK_APPLICATIONS, type ApplicationRow, type ApplicationStatus } from "./data";
 import FilterBar, { type ApplicationFilters } from "./FilterBar";
 import { Badge } from "../components/application/DetailBits";
 import { priorityLabel, priorityTone, statusLabel, statusTone, formatNextAction } from "../lib/applicationUi";
@@ -9,36 +9,42 @@ import type { Tone } from "../lib/applicationUi";
 
 import { useEffect, useMemo, useState } from "react";
 
-type ApplicationStatus = 
-    | "draft"
-    | "applied"
-    | "screen"
-    | "interview"
-    | "offer"
-    | "rejected"
-    | "withdrawn"
-    | "ghosted";
-
-type ApplicationRow = {
-    application_id:  string;
-    company_name: string;
-    role_title: string;
-    status: ApplicationStatus;
-    priority: number; // 1 (high) -> 5 (low)
-    applied_at: string | null;
-    last_touch_at: string | null;
-    next_action_at: string | null;
-    location: string | null;
-    work_mode: string | null; // remote/hybrid/onsite
-    notes?: string | null;
-};
-
 function formatDateShort(d: Date) {
     return d.toLocaleDateString(undefined, {month: "short", day: "numeric"});
 }
 
 export default function ApplicationsPage() {
-    const allRows = useMemo(() => MOCK_APPLICATIONS, []);
+    const [allRows, setAllRows] = useState<ApplicationRow[]>(MOCK_APPLICATIONS);
+
+    const [isCreateOpen, setIsCreateOpen] = useState(false);
+
+    type NewAppForm = {
+        company_name: string;
+        role_title: string;
+        status: ApplicationStatus;
+        priority: number;
+        applied_at: string;
+        next_action_at: string;
+        next_action_label: string;
+        location: string;
+        work_mode: string;
+        notes: string;
+    };
+
+    const INITIAL_NEW_APP: NewAppForm = {
+        company_name: "",
+        role_title: "",
+        status: "applied",
+        priority: 3,
+        applied_at: "",
+        next_action_at: "",
+        next_action_label: "",
+        location: "",
+        work_mode: "",
+        notes: "",
+    }
+
+    const [newApp, setNewApp] = useState<NewAppForm>(INITIAL_NEW_APP);
 
     const DEFAULT_FILTERS: ApplicationFilters = {
         search: "",
@@ -112,7 +118,7 @@ export default function ApplicationsPage() {
                     </p>
                 </div>
 
-                <button className = "rounded-lg bg-black px-4 py-2 text-sm text-white hover:opacity-90">
+                <button className = "rounded-lg bg-black px-4 py-2 text-sm text-white hover:opacity-90" onClick = {() => setIsCreateOpen(true)}>
                     + New Application
                 </button>
             </div>
@@ -138,7 +144,7 @@ export default function ApplicationsPage() {
                         Add your first aplication to start tracking your pipeline.
                     </div>
 
-                    <button type = "button" className = "mt-4 rounded-lg bg-black px-4 py-2 text-sm text-white hover:opacity-90">
+                    <button type = "button" className = "mt-4 rounded-lg bg-black px-4 py-2 text-sm text-white hover:opacity-90" onClick = {() => setIsCreateOpen(true)}>
                         + New Application
                     </button>
                 </div>
@@ -340,6 +346,201 @@ export default function ApplicationsPage() {
                         </div>
                     </div>
                 </aside>
+
+                {isCreateOpen ? (
+                    <>
+                        <div
+                            className = "fixed insert-0 bg-black/30"
+                            onClick = {() => setIsCreateOpen(false)}
+                            aria-hidden = "true"
+                        />
+
+                        <aside className = "fixed right-0 top-0 h-full w-[520px] max-w-[95vw] border-1 bg-white shadow-xl">
+                            <div className = "h-full overflow-y-auto p-5">
+                                <div className = "flex items-start justify-between gap-3">
+                                    <div>
+                                        <div className = "text-sm text-gray-700">Create</div>
+                                        <div className = "text-lg font-semibold">New Application</div>
+                                    </div>
+
+                                    <button className = "rounded-lg border px-3 py-1 text-sm hover:bg-gray-50" onClick = {() => setIsCreateOpen(false)} aria-label = "Close" title = "Close">
+                                        Close
+                                    </button>
+                                </div>
+
+                                <div className = "mt-5 space-y-4 text-sm">
+                                    <div>
+                                        <div className = "font-medium text-gray-700">Company</div>
+                                        <input 
+                                            className = "mt-1 w-full rounded-lg border px-3 py-2"
+                                            value = {newApp.company_name}
+                                            onChange = {(e) => setNewApp((p) => ({ ...p, company_name: e.target.value }))}
+                                            placeholder = "e.g., Google"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <div className = "font-medium text-gray-700">Role</div>
+                                        <input 
+                                            className = "mt-1 w-full rounded-lg borer px-3 py-2"
+                                            value = {newApp.role_title}
+                                            onChange = {(e) => setNewApp((p) => ({ ...p, role_title: e.target.value }))}
+                                            placeholder = "e.g., Entry Level Software Engineer"
+                                        />
+                                    </div>
+
+                                    <div className = "grid grid-cols-2 gap-3">
+                                        <div>
+                                            <div className = "font-medium text-gray-700">Status</div>
+                                            <select 
+                                                className = "mt-1 w-full rounded-lg border px-3 py-2"
+                                                onChange = {(e) => setNewApp((p) => ({ ...p, status: e.target.value as ApplicationStatus }))}
+                                            >
+                                                <option value = "draft">Draft</option>
+                                                <option value = "applied">Applied</option>
+                                                <option value = "screen">Screen</option>
+                                                <option value = "interview">Interview</option>
+                                                <option value = "Offer">Offer</option>
+                                                <option value = "rejected">Rejected</option>
+                                                <option value = "withdrawn">Withdrawn</option>
+                                                <option value = "ghosted">Ghosted</option>
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <div className = "font-medium text-gray-700">Priority (1 - 5)</div>
+                                            <input 
+                                                type = "number"
+                                                min = {1}
+                                                max = {5}
+                                                className = "mt-1 w-full rounded-lg border px-3 py-2"
+                                                value = {newApp.priority}
+                                                onChange = {(e) => setNewApp((p) => ({ ...p, priority: Number(e.target.value) }))}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className = "grid grid-cols-2 gap-3">
+                                        <div>
+                                            <div className = "font-medium text-gray-700">Applied Date</div>
+                                            <input 
+                                                type = "date"
+                                                className = "mt-1 w-full rounded-lg border px-3 py-2"
+                                                value = {newApp.applied_at}
+                                                onChange = {(e) => setNewApp((p) => ({ ...p, applied_at: e.target.value }))}
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <div className = "font-medium text-gray-700">Next Action date/time</div>
+                                            <input 
+                                                type = "datetime-local"
+                                                className = "mt-1 w-full rounded-lg border px-3 py-2"
+                                                onChange = {(e) => setNewApp((p) => ({ ...p, next_action_at: e.target.value }))}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <div className = "font-medium text-gray-700">Next action (what)</div>
+                                        <input
+                                            className = "mt-1 w-full rounded-lg border px-3 py-2"
+                                            value = {newApp.next_action_label}
+                                            onChange = {(e) => setNewApp((p) => ({ ...p, next_action_label: e.target.value }))}
+                                            placeholder = "e.g., Recruiter screen / Follow up email"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <div>
+                                            <div className = "font-medium text-gray-700">Location</div>
+                                            <input
+                                                className = "mt-1 w-full rounded-lg border px-3 py-2"
+                                                value = {newApp.location}
+                                                onChange = {(e) => setNewApp((p) => ({ ...p, location: e.target.value}))}
+                                                placeholder = "e.g., Dallas, TX"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <div className = "font-medium text-gray-700">Work Mode</div>
+                                            <select
+                                                className = "mt-1 w-full rounded-lg border px-3 py-2"
+                                                value = {newApp.work_mode}
+                                                onChange = {(e) => setNewApp((p)=> ({ ...p, work_mode: e.target.value}))}
+                                            >
+                                                <option value="">—</option>
+                                                <option value="remote">Remote</option>
+                                                <option value="hybrid">Hybrid</option>
+                                                <option value="onsite">Onsite</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <div className = "font-medium text-gray-700">Notes</div>
+                                        <textarea
+                                            className = "mt-1 w-full rounded-lg border px-3 py-2"
+                                            rows = {5}
+                                            value = {newApp.notes}
+                                            onChange = {(e) => setNewApp((p) => ({ ...p, notes: e.target.value}))}
+                                            placeholder = "Add any key details..."
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className = "mt-6 flex gap-2">
+                                    <button
+                                        className = "flex-1 rounded-lg bg-black px-3 py-2 text-sm text-white hover:opacity-90 disabled:opacity-50"
+                                        disabled = {!newApp.company_name.trim() || !newApp.role_title.trim()}
+                                        onClick = {() => {
+                                            const id = crypto.randomUUID();
+
+                                            // const toIsoOrNull = (d: string) => (d ? new Date(d).toISOString() : null);
+                                            // NOTE (future): When we support multiple users + time zones
+                                            // convert local datetime inputs to UTC before saving.
+
+                                            const newRow: ApplicationRow = {
+                                                application_id: id,
+                                                company_name: newApp.company_name.trim(),
+                                                role_title: newApp.role_title.trim(),
+                                                status: newApp.status,
+                                                priority: Math.min(5, Math.max(1, newApp.priority || 3)),
+                                                applied_at: newApp.applied_at ? newApp.applied_at : null,
+                                                last_touch_at: null,
+                                                next_action_at: newApp.next_action_at ? newApp.next_action_at : null,
+                                                location: newApp.location.trim() || null,
+                                                work_mode: newApp.work_mode || null,
+                                                notes: newApp.notes.trim() || null,
+                                                // If you added this field to your data model:
+                                                next_action_label: newApp.next_action_label.trim() || null,
+                                            };
+
+                                            setAllRows((prev) => [newRow, ...prev]);
+                                            setIsCreateOpen(false);
+                                            setNewApp(INITIAL_NEW_APP);
+                                        }}
+                                    >
+                                        Create
+                                    </button>
+
+                                    <button
+                                        className = "rounded-lg border px-3 py-2 text-sm hover:bg-gray-50"
+                                        onClick = {() => {
+                                            setIsCreateOpen(false);
+                                            setNewApp(INITIAL_NEW_APP);
+                                        }}
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                                <div className = "mt-4 text-xs text-gray-700">
+                                    Tip: Fill Company + Role to enable Create
+                                </div>
+                            </div>
+                        </aside>
+                    </>
+                ) : null}
 
                 {/* Slide-in animation via Tailwind (simple) */}
                 <style jsx global>{`
