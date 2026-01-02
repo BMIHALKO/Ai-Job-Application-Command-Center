@@ -8,6 +8,7 @@ import {
   priorityTone,
   statusLabel,
   statusTone,
+  formatNextAction
 } from "../../lib/applicationUi";
 
 export default async function ApplicationDetailPage({
@@ -124,7 +125,23 @@ export default async function ApplicationDetailPage({
           <div className = "grid grid-cols-2 gap-4">
             <KV label = "Applied" value = {formatDate(app.applied_at)} />
             <KV label = "Last touch" value = {formatDate(app.last_touch_at)} />
-            <KV label = "Next action" value = {formatDate(app.next_action_at)} />
+            <div className = "col-span-2 grid grid-cols-2">
+              <div>
+                <div className = " text-sm front-medium text-gray-700">
+                  Next Action
+                </div>
+                
+                <div className = "mt-1 text-sm text-gray-900">
+                  {app.next_action_label ?? "—"}
+                </div>
+              </div>
+
+              <div className = "self-start">
+                <Badge tone = {formatNextAction(app.next_action_at).tone}>
+                  {formatNextAction(app.next_action_at).label}
+                </Badge>
+              </div>
+            </div>
             <KV label = "Application ID" value = {app.application_id} />
           </div>
         </Section>

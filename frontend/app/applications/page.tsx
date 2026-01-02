@@ -4,7 +4,8 @@ import Link from "next/link";
 import { MOCK_APPLICATIONS } from "./data";
 import FilterBar, { type ApplicationFilters } from "./FilterBar";
 import { Badge } from "../components/application/DetailBits";
-import { priorityLabel, priorityTone, statusLabel, statusTone } from "../lib/applicationUi";
+import { priorityLabel, priorityTone, statusLabel, statusTone, formatNextAction } from "../lib/applicationUi";
+import type { Tone } from "../lib/applicationUi";
 
 import { useEffect, useMemo, useState } from "react";
 
@@ -34,38 +35,6 @@ type ApplicationRow = {
 
 function formatDateShort(d: Date) {
     return d.toLocaleDateString(undefined, {month: "short", day: "numeric"});
-}
-
-function formatNextAction(nextActionISO: string | null) {
-    if (!nextActionISO) return { label: "—", tone: "neutral" as const };
-
-    const now = new Date();
-    const due = new Date(nextActionISO);
-
-    // normalize to dates for "today/tomorrow"
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const startOfDue = new Date(due.getFullYear(), due.getMonth(), due.getDate());
-
-    const msPerDay = 24 * 60 * 60 * 1000;
-    const dayDiff = Math.round((startOfDue.getTime() - startOfToday.getTime()) / msPerDay);
-
-    if (due.getTime() < now.getTime()) {
-        // overdue
-        const overdueDays = Math.max(1, Math.floor((startOfToday.getTime() - startOfDue.getTime()) / msPerDay));
-        return { label: `Overdue • ${overdueDays}d`, tone: "danger" as const };
-    }
-
-    if (dayDiff === 0) return { label: "Today", tone: "warning" as const };
-    if (dayDiff === 1) return { label: "Tomorrow", tone: "neutral" as const };
-
-    return { label: formatDateShort(due), tone: "neutral" as const }
-}
-
-function toneChipClass(tone: "neutral" | "warning" | "danger") {
-    if (tone === "danger") return "bg-red-50 text-red-700 border-red-200";
-    if (tone === "warning") return "bg-amber-50 text-amber-800 border-amber-200";
-
-    return "bg-gray-50 text-gray-700 border-gray-200";
 }
 
 export default function ApplicationsPage() {
@@ -244,13 +213,7 @@ export default function ApplicationsPage() {
 
                                         <td className = "px-4 py-3">
                                             <div className = "flex items-center">
-                                                <span
-                                                    className = {`inline-flex items-center rounded-full border px-2 py-1 text-xs font-medium ${toneChipClass(
-                                                        next.tone
-                                                    )}`}
-                                                >
-                                                    {next.label}
-                                                </span>
+                                                <Badge tone = {next.tone}>{next.label}</Badge>
                                             </div>
                                         </td>
 
@@ -312,8 +275,24 @@ export default function ApplicationsPage() {
 
                         <div className="mt-5 space-y-3 text-sm">
                             <div className="flex justify-between gap-4">
-                                <div className="text-gray-700">Next action</div>
-                                <div className="font-medium">{formatNextAction(selected.next_action_at).label}</div>
+                                <div>
+                                    <div className="text-gray-700">Next action:</div>
+
+                                
+                                    {selected.next_action_label ? (
+                                        <div className = "mt-2 w-full text-left text-sm font-medium text-gray-900">{selected.next_action_label}</div>
+                                    ) : (
+                                        <div className = "mt-2 w-full text-left text-sm italic text-gray-500"> No next action set</div>
+                                    )}
+                                </div>
+                                
+                                <div className = "flex flex-col items-start text-right">
+                                    <div className = "self-end">
+                                        <Badge tone = {formatNextAction(selected.next_action_at).tone}>
+                                            {formatNextAction(selected.next_action_at).label}
+                                        </Badge>
+                                    </div>
+                                </div>
                             </div>
                             <div className="flex justify-between gap-4">
                                 <div className="text-gray-700">Last touch</div>
