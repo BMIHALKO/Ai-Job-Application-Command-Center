@@ -112,7 +112,7 @@ export default async function ApplicationDetailPage({
       </div>
 
       <Section title = "Notes">
-        <div className = "rounded-x1 border bg-white p-4">
+        <div className = "rounded-xl border bg-white p-4">
           {app.notes && app.notes.trim().length > 0 ? (
             <div className = "text-sm text-gray-800 whitespace-pre-line">
               {app.notes}

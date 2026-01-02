@@ -4,7 +4,7 @@ import Link from "next/link";
 import { MOCK_APPLICATIONS } from "./data";
 import FilterBar, { type ApplicationFilters } from "./FilterBar";
 import { Badge } from "../components/application/DetailBits";
-import { priorityLabel, priorityTone, statusTone } from "../lib/applicationUi";
+import { priorityLabel, priorityTone, statusLabel, statusTone } from "../lib/applicationUi";
 
 import { useEffect, useMemo, useState } from "react";
 
@@ -160,35 +160,39 @@ export default function ApplicationsPage() {
                 }}
             />
 
-            {rows.length === 0 ? (
+            {allRows.length === 0 ? (
+                <div className = "mt-6 rounded-xl border bg-white p-6">
+                    <div className = "text-sm font-medium text-gray-900">
+                        No applications yet.
+                    </div>
+                    <div className = "mt-1 text-sm text-gray-600">
+                        Add your first aplication to start tracking your pipeline.
+                    </div>
+
+                    <button type = "button" className = "mt-4 rounded-lg bg-black px-4 py-2 text-sm text-white hover:opacity-90">
+                        + New Application
+                    </button>
+                </div>
+            ) : rows.length === 0 ? (
                 <div className = "mt-6 rounded-x1 border bg-white p-6">
                     <div className = "text-sm font-medium text-gray-900">
-                        No applications match your filters.
+                        No application match your filters.
                     </div>
                     <div className = "mt-1 text-sm text-gray-600">
                         Try clearing filters or adjusting your search.
                     </div>
 
                     <div className = "mt-4 flex gap-2">
-                        <button
-                            className = "rounded-lg bg-black px-4 py-2 text-sm text-white hover:opacity-90"
-                            onClick = {() => {
-                                setSelectedId(null);
-                                setFilters(DEFAULT_FILTERS);
-                            }}
-                        >
+                        <button className = "rounded-lg bg-black px-4 py-2 text-sm text-white hover:opacity-90" onClick = {() => {
+                            setSelectedId(null);
+                            setFilters(DEFAULT_FILTERS);
+                        }}>
                             Reset Filters
                         </button>
 
-                        <button
-                            className = "rounded-lg border px-4 py-2 text-sm hover:bg-gray-50"
-                            onClick={() => {
-                                setFilters((prev) => ({
-                                    ...prev,
-                                    search: "",
-                                }))
-                            }}
-                        >
+                        <button className = "rounded-lg border px-4 py-2 text-sm hover:bg-gray-50" onClick = {() => {
+                            setFilters((prev) => ({ ...prev, search: ""}));
+                        }}>
                             Clear search
                         </button>
                     </div>
@@ -226,7 +230,7 @@ export default function ApplicationsPage() {
 
                                         <td className = "px-4 py-3">
                                             <div className = "flex items-center">
-                                                <Badge tone = {statusTone(row.status)}>{row.status}</Badge>
+                                                <Badge tone = {statusTone(row.status)}>{statusLabel(row.status)}</Badge>
                                             </div>
                                         </td>
 
@@ -255,7 +259,7 @@ export default function ApplicationsPage() {
                                         </td>
 
                                         <td className = "px-4 py-3 text-gray-700">
-                                            {row.applied_at ?? "—"}
+                                            {row.applied_at ? formatDateShort(new Date(row.applied_at)) : "—"}
                                         </td>
 
                                         <td className = "px-4 py-3 text-gray-700">
@@ -299,7 +303,7 @@ export default function ApplicationsPage() {
                         </div>
 
                         <div className="mt-4 flex flex-wrap gap-2">
-                            <Badge tone = {statusTone(selected.status)}>{selected.status}</Badge>
+                            <Badge tone = {statusTone(selected.status)}>{statusLabel(selected.status)}</Badge>
 
                             <Badge tone = {priorityTone(selected.priority)}>
                                 {priorityLabel(selected.priority)} (P{selected.priority})

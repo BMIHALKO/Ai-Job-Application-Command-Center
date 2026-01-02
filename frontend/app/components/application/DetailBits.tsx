@@ -39,7 +39,7 @@ export function Section ({
     children: React.ReactNode;
 }) {
     return (
-        <section className = "rounded-x1 border bg-white p-4">
+        <section className = "rounded-xl border bg-white p-4">
             <h2 className = "text-xs font-semibold uppercase tracking-wide text-neutral-600">{title}</h2>
             <div className = "mt-3">{children}</div>
         </section>
