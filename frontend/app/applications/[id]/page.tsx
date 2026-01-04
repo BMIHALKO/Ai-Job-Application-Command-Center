@@ -18,7 +18,7 @@ export default async function ApplicationDetailPage({
 }) {
   const { id } = await params;
 
-  const app = MOCK_APPLICATIONS.find((x) => x.application_id === id);
+  const app = MOCK_APPLICATIONS.find((x) => x.id === id);
 
   if (!app) {
     return (
@@ -142,7 +142,7 @@ export default async function ApplicationDetailPage({
                 </Badge>
               </div>
             </div>
-            <KV label = "Application ID" value = {app.application_id} />
+            <KV label = "Application ID" value = {app.id} />
           </div>
         </Section>
       </div>

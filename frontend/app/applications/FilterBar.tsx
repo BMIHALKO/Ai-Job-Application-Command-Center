@@ -111,6 +111,7 @@ export default function FilterBar({ filters, onChange, onReset }: FilterBarProps
                 type="button"
                 onClick={() => (onReset ? onReset() : onChange({ search: "", status: "all", priority: "all", workMode: "all" }))}
                 style={{
+                color: "#1a1a1aff",
                 padding: "10px 12px",
                 borderRadius: 8,
                 border: "1px solid #ccc",

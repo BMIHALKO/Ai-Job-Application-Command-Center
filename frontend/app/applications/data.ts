@@ -9,7 +9,7 @@ export type ApplicationStatus =
     | "ghosted";
 
 export type ApplicationRow = {
-    application_id: string;
+    id: string;
     company_name: string;
     role_title: string;
     status: ApplicationStatus;
@@ -25,7 +25,7 @@ export type ApplicationRow = {
 
 export const MOCK_APPLICATIONS: ApplicationRow[] = [
   {
-    application_id: "1",
+    id: "1",
     company_name: "IBM",
     role_title: "Entry Level Software Engineer 2026",
     status: "rejected",
@@ -39,7 +39,7 @@ export const MOCK_APPLICATIONS: ApplicationRow[] = [
     notes: "Applied Dec 29, rejected two days later. Entry Level EDA-focused role within IBM Systems.",
   },
   {
-    application_id: "2",
+    id: "2",
     company_name: "Another Corp",
     role_title: "Frontend Engineer",
     status: "screen",
@@ -58,7 +58,7 @@ export const MOCK_APPLICATIONS: ApplicationRow[] = [
     - Ask about next steps`,
   },
   {
-    application_id: "3",
+    id: "3",
     company_name: "No Response LLC",
     role_title: "Backend Engineer",
     status: "ghosted",

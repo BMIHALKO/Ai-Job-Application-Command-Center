@@ -1,11 +1,14 @@
 "use client";
 import Link from "next/link";
 
-import { MOCK_APPLICATIONS, type ApplicationRow, type ApplicationStatus } from "./data";
+import type {  ApplicationRow, ApplicationStatus } from "./data";
 import FilterBar, { type ApplicationFilters } from "./FilterBar";
 import { Badge } from "../components/application/DetailBits";
 import { priorityLabel, priorityTone, statusLabel, statusTone, formatNextAction } from "../lib/applicationUi";
 import type { Tone } from "../lib/applicationUi";
+
+import { collection, addDoc, getDocs, query, orderBy } from "firebase/firestore";
+import { db } from "../../lib/firebaseClient";
 
 import { useEffect, useMemo, useState } from "react";
 
@@ -14,7 +17,9 @@ function formatDateShort(d: Date) {
 }
 
 export default function ApplicationsPage() {
-    const [allRows, setAllRows] = useState<ApplicationRow[]>(MOCK_APPLICATIONS);
+    const [allRows, setAllRows] = useState<ApplicationRow[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isSaving, setIsSaving] = useState(false);
 
     const [isCreateOpen, setIsCreateOpen] = useState(false);
 
@@ -84,14 +89,14 @@ export default function ApplicationsPage() {
 
     const [selectedId, setSelectedId] = useState < string | null > (null);
 
-    const selected = useMemo(() => rows.find((r) => r.application_id === selectedId) ?? null, [
+    const selected = useMemo(() => rows.find((r) => r.id === selectedId) ?? null, [
         rows,
         selectedId,
     ]);
 
     useEffect(() => {
         if (!selectedId) return;
-        const stillVisible = rows.some((r) => r.application_id === selectedId);
+        const stillVisible = rows.some((r) => r.id === selectedId);
         if (!stillVisible) setSelectedId(null);
     }, [rows, selectedId]);
 
@@ -107,6 +112,43 @@ export default function ApplicationsPage() {
         return () => window.removeEventListener("keydown", onKeyDown);
     }, [selectedId]);
 
+    useEffect(() => {
+        let cancelled = false;
+
+        async function loadApplications() {
+            try {
+                const q = query(
+                    collection(db, "applications"),
+                    orderBy("company_name")
+                );
+
+                const snap = await getDocs(q);
+
+                const rows: ApplicationRow[] = snap.docs.map((doc) => {
+                    const data = doc.data() as Omit<ApplicationRow, "id">;
+                    return {
+                        id: doc.id,
+                        ...data,
+                    };
+                });
+                
+                if (!cancelled) {
+                    setAllRows(rows);
+                }
+            } finally {
+                if (!cancelled) {
+                    setIsLoading(false);
+                }
+            }
+        }
+
+        loadApplications();
+
+        return () => {
+            cancelled = true;
+        }
+    }, []);
+
     return (
         <main className = "p-8">
             {/* Header Row */}
@@ -118,7 +160,7 @@ export default function ApplicationsPage() {
                     </p>
                 </div>
 
-                <button className = "rounded-lg bg-black px-4 py-2 text-sm text-white hover:opacity-90" onClick = {() => setIsCreateOpen(true)}>
+                <button className = "rounded-lg bg-black border px-4 py-2 text-sm text-white hover:opacity-90" onClick = {() => setIsCreateOpen(true)}>
                     + New Application
                 </button>
             </div>
@@ -135,7 +177,11 @@ export default function ApplicationsPage() {
                 }}
             />
 
-            {allRows.length === 0 ? (
+            {isLoading? (
+                <div className = "mt-6 rounded-xl border bg-white p-6 text-sm text-gray-700">
+                    Loading applications . . .
+                </div>
+            ) : allRows.length === 0 ? (
                 <div className = "mt-6 rounded-xl border bg-white p-6">
                     <div className = "text-sm font-medium text-gray-900">
                         No applications yet.
@@ -191,14 +237,14 @@ export default function ApplicationsPage() {
                         <tbody className = "text-gray-900">
                             {rows.map((row) => {
                                 const next = formatNextAction(row.next_action_at);
-                                const isSelected = row.application_id === selectedId;
+                                const isSelected = row.id === selectedId;
 
                                 return (
-                                    <tr key = {row.application_id} className={[
+                                    <tr key = {row.id} className={[
                                         "border-t hover:bg-gray-50 cursor-pointer",
                                         isSelected ? "bg-gray-50" : "",
                                     ].join(" ")}
-                                    onClick={() => setSelectedId(row.application_id)}
+                                    onClick={() => setSelectedId(row.id)}
                                     >
                                         <td className = "px-4 py-3 font-medium">{row.company_name}</td>
                                         <td className = "px-4 py-3">{row.role_title}</td>
@@ -333,7 +379,7 @@ export default function ApplicationsPage() {
                         </div>
 
                         <div className="mt-6 flex gap-2">
-                            <Link href = {`/applications/${selected.application_id}`} className = "flex-1 rounded-lg bg-black px-3 py-2 text-center text-sm text-white hover:opacity-90">
+                            <Link href = {`/applications/${selected.id}`} className = "flex-1 rounded-lg bg-black px-3 py-2 text-center text-sm text-white hover:opacity-90">
                                 Open Details
                             </Link>
                             <button className="rounded-lg border px-3 py-2 text-sm hover:bg-gray-50">
@@ -378,11 +424,11 @@ export default function ApplicationsPage() {
                         <div className = "h-full overflow-y-auto p-5">
                             <div className = "flex items-start justify-between gap-3">
                                 <div>
-                                    <div className = "text-sm text-gray-700">Create</div>
-                                    <div className = "text-lg font-semibold">New Application</div>
+                                    <div className = "text-sm text-gray-900">Create</div>
+                                    <div className = "text-lg font-semibold text-gray-900">New Application</div>
                                 </div>
 
-                                <button className = "rounded-lg border px-3 py-1 text-sm hover:bg-gray-50" onClick = {() => setIsCreateOpen(false)} aria-label = "Close" title = "Close">
+                                <button className = "rounded-lg border px-3 py-1 text-sm hover:bg-gray-50 text-gray-900" onClick = {() => setIsCreateOpen(false)} aria-label = "Close" title = "Close">
                                     Close
                                 </button>
                             </div>
@@ -391,7 +437,7 @@ export default function ApplicationsPage() {
                                 <div>
                                     <div className = "font-medium text-gray-700">Company</div>
                                     <input 
-                                        className = "mt-1 w-full rounded-lg border px-3 py-2"
+                                        className = "mt-1 w-full rounded-lg border px-3 py-2 text-gray-900 placeholder:text-gray-400"
                                         value = {newApp.company_name}
                                         onChange = {(e) => setNewApp((p) => ({ ...p, company_name: e.target.value }))}
                                         placeholder = "e.g., Google"
@@ -401,7 +447,7 @@ export default function ApplicationsPage() {
                                 <div>
                                     <div className = "font-medium text-gray-700">Role</div>
                                     <input 
-                                        className = "mt-1 w-full rounded-lg border px-3 py-2"
+                                        className = "mt-1 w-full rounded-lg border px-3 py-2 text-gray-900 placeholder:text-gray-400"
                                         value = {newApp.role_title}
                                         onChange = {(e) => setNewApp((p) => ({ ...p, role_title: e.target.value }))}
                                         placeholder = "e.g., Entry Level Software Engineer"
@@ -412,14 +458,14 @@ export default function ApplicationsPage() {
                                     <div>
                                         <div className = "font-medium text-gray-700">Status</div>
                                         <select 
-                                            className = "mt-1 w-full rounded-lg border px-3 py-2"
+                                            className = "mt-1 w-full rounded-lg border px-3 py-2 text-gray-900"
                                             onChange = {(e) => setNewApp((p) => ({ ...p, status: e.target.value as ApplicationStatus }))}
                                         >
                                             <option value = "draft">Draft</option>
                                             <option value = "applied">Applied</option>
                                             <option value = "screen">Screen</option>
                                             <option value = "interview">Interview</option>
-                                            <option value = "Offer">Offer</option>
+                                            <option value = "offer">Offer</option>
                                             <option value = "rejected">Rejected</option>
                                             <option value = "withdrawn">Withdrawn</option>
                                             <option value = "ghosted">Ghosted</option>
@@ -432,7 +478,7 @@ export default function ApplicationsPage() {
                                             type = "number"
                                             min = {1}
                                             max = {5}
-                                            className = "mt-1 w-full rounded-lg border px-3 py-2"
+                                            className = "mt-1 w-full rounded-lg border px-3 py-2 text-gray-900"
                                             value = {newApp.priority}
                                             onChange = {(e) => setNewApp((p) => ({ ...p, priority: Number(e.target.value) }))}
                                         />
@@ -444,7 +490,7 @@ export default function ApplicationsPage() {
                                         <div className = "font-medium text-gray-700">Applied Date</div>
                                         <input 
                                             type = "date"
-                                            className = "mt-1 w-full rounded-lg border px-3 py-2"
+                                            className = "mt-1 w-full rounded-lg border px-3 py-2 text-gray-900"
                                             value = {newApp.applied_at}
                                             onChange = {(e) => setNewApp((p) => ({ ...p, applied_at: e.target.value }))}
                                         />
@@ -454,7 +500,7 @@ export default function ApplicationsPage() {
                                         <div className = "font-medium text-gray-700">Next Action date/time</div>
                                         <input 
                                             type = "datetime-local"
-                                            className = "mt-1 w-full rounded-lg border px-3 py-2"
+                                            className = "mt-1 w-full rounded-lg border px-3 py-2 text-gray-900"
                                             onChange = {(e) => setNewApp((p) => ({ ...p, next_action_at: e.target.value }))}
                                         />
                                     </div>
@@ -463,7 +509,7 @@ export default function ApplicationsPage() {
                                 <div>
                                     <div className = "font-medium text-gray-700">Next action (what)</div>
                                     <input
-                                        className = "mt-1 w-full rounded-lg border px-3 py-2"
+                                        className = "mt-1 w-full rounded-lg border px-3 py-2 text-gray-900 placeholder:text-gray-400"
                                         value = {newApp.next_action_label}
                                         onChange = {(e) => setNewApp((p) => ({ ...p, next_action_label: e.target.value }))}
                                         placeholder = "e.g., Recruiter screen / Follow up email"
@@ -474,7 +520,7 @@ export default function ApplicationsPage() {
                                     <div>
                                         <div className = "font-medium text-gray-700">Location</div>
                                         <input
-                                            className = "mt-1 w-full rounded-lg border px-3 py-2"
+                                            className = "mt-1 w-full rounded-lg border px-3 py-2 text-gray-900 placeholder:text-gray-400"
                                             value = {newApp.location}
                                             onChange = {(e) => setNewApp((p) => ({ ...p, location: e.target.value}))}
                                             placeholder = "e.g., Dallas, TX"
@@ -484,7 +530,7 @@ export default function ApplicationsPage() {
                                     <div>
                                         <div className = "font-medium text-gray-700">Work Mode</div>
                                         <select
-                                            className = "mt-1 w-full rounded-lg border px-3 py-2"
+                                            className = "mt-1 w-full rounded-lg border px-3 py-2 text-gray-900"
                                             value = {newApp.work_mode}
                                             onChange = {(e) => setNewApp((p)=> ({ ...p, work_mode: e.target.value}))}
                                         >
@@ -499,9 +545,9 @@ export default function ApplicationsPage() {
                                 <div>
                                     <div className = "font-medium text-gray-700">Notes</div>
                                     <textarea
-                                        className = "mt-1 w-full rounded-lg border px-3 py-2"
+                                        className = "mt-1 w-full rounded-lg border px-3 py-2 text-gray-900 placeholder:text-gray-400"
                                         rows = {5}
-                                        value = {newApp.notes}
+                                        value = { newApp.notes }
                                         onChange = {(e) => setNewApp((p) => ({ ...p, notes: e.target.value}))}
                                         placeholder = "Add any key details..."
                                     />
@@ -511,40 +557,64 @@ export default function ApplicationsPage() {
                             <div className = "mt-6 flex gap-2">
                                 <button
                                     className = "flex-1 rounded-lg bg-black px-3 py-2 text-sm text-white hover:opacity-90 disabled:opacity-50"
-                                    disabled = {!newApp.company_name.trim() || !newApp.role_title.trim()}
-                                    onClick = {() => {
-                                        const id = crypto.randomUUID();
+                                    disabled = { isSaving || !newApp.company_name.trim() || !newApp.role_title.trim() }
+                                    onClick = { async() => {
+                                        if (isSaving) return;
 
-                                        // const toIsoOrNull = (d: string) => (d ? new Date(d).toISOString() : null);
-                                        // NOTE (future): When we support multiple users + time zones
-                                        // convert local datetime inputs to UTC before saving.
+                                        setIsSaving(true);
 
-                                        const newRow: ApplicationRow = {
-                                            application_id: id,
-                                            company_name: newApp.company_name.trim(),
-                                            role_title: newApp.role_title.trim(),
-                                            status: newApp.status,
-                                            priority: Math.min(5, Math.max(1, newApp.priority || 3)),
-                                            applied_at: newApp.applied_at ? newApp.applied_at : null,
-                                            last_touch_at: null,
-                                            next_action_at: newApp.next_action_at ? newApp.next_action_at : null,
-                                            location: newApp.location.trim() || null,
-                                            work_mode: newApp.work_mode || null,
-                                            notes: newApp.notes.trim() || null,
-                                            // If you added this field to your data model:
-                                            next_action_label: newApp.next_action_label.trim() || null,
-                                        };
+                                        try {
+                                            const company = newApp.company_name.trim();
+                                            const role = newApp.role_title.trim();
 
-                                        setAllRows((prev) => [newRow, ...prev]);
-                                        setIsCreateOpen(false);
-                                        setNewApp(INITIAL_NEW_APP);
+                                            const appl_info = {
+                                                company_name: company,
+                                                company_name_lc: company.toLowerCase(),
+                                                role_title: role,
+                                                status: newApp.status,
+                                                priority: Math.min(5, Math.max(1, newApp.priority || 3)),
+                                                applied_at: newApp.applied_at ? newApp.applied_at : null,
+                                                last_touch_at: null,
+                                                next_action_at: newApp.next_action_at ? newApp.next_action_at : null,
+                                                next_action_label: newApp.next_action_label.trim() || null,
+                                                location: newApp.location.trim() || null,
+                                                work_mode: newApp.work_mode || null,
+                                                notes: newApp.notes.trim() || null,
+                                            };
+
+                                            const ref = await addDoc(collection(db, "applications"), appl_info);
+
+                                            const newRow: ApplicationRow = {
+                                                id: ref.id,
+                                                company_name: appl_info.company_name,
+                                                role_title: appl_info.role_title,
+                                                status: appl_info.status,
+                                                priority: appl_info.priority,
+                                                applied_at: appl_info.applied_at,
+                                                last_touch_at: appl_info.last_touch_at,
+                                                next_action_at: appl_info.next_action_at,
+                                                next_action_label: appl_info.next_action_label,
+                                                location: appl_info.location,
+                                                work_mode: appl_info.work_mode,
+                                                notes: appl_info.notes,
+                                            };
+
+                                            setAllRows((prev) => [newRow, ...prev]);
+                                            setIsCreateOpen(false);
+                                            setNewApp(INITIAL_NEW_APP);
+                                        } catch (e) {
+                                            console.error("Create failed:", e);
+                                            alert(`Create failed. Check console.\n\n${String(e)}`)
+                                        } finally {
+                                            setIsSaving(false);
+                                        }
                                     }}
                                 >
-                                    Create
+                                    {isSaving ? "Saving . . ." : "Create"}
                                 </button>
 
                                 <button
-                                    className = "rounded-lg border px-3 py-2 text-sm hover:bg-gray-50"
+                                    className = "rounded-lg border px-3 py-2 text-sm hover:bg-gray-50 text-gray-900"
                                     onClick = {() => {
                                         setIsCreateOpen(false);
                                         setNewApp(INITIAL_NEW_APP);
