@@ -7,7 +7,7 @@ import { Badge } from "../components/application/DetailBits";
 import { priorityLabel, priorityTone, statusLabel, statusTone, formatNextAction } from "../lib/applicationUi";
 import type { Tone } from "../lib/applicationUi";
 
-import { collection, addDoc, getDocs, query, orderBy } from "firebase/firestore";
+import { collection, addDoc, getDocs, query, orderBy, doc, updateDoc } from "firebase/firestore";
 import { db } from "../../lib/firebaseClient";
 
 import { useEffect, useMemo, useState } from "react";
@@ -57,6 +57,43 @@ export default function ApplicationsPage() {
         priority: "all",
         workMode: "all",
     };
+
+    const [isQuickEditOpen, setIsQuickEditOpen] = useState(false);
+    const [isUpdating, setIsUpdating] = useState(false);
+    const [updateError, setUpdateError] = useState<string | null>(null);
+
+    type EditAppForm = {
+        company_name: string;
+        role_title: string;
+        status: ApplicationStatus;
+        priority: number;
+        applied_at: string;
+        last_touch_at: string;
+        next_action_at: string;
+        next_action_label: string;
+        location: string;
+        work_mode: string;
+        notes: string;
+    };
+
+    const EMPTY_EDIT_APP: EditAppForm = {
+        company_name: "",
+        role_title: "",
+        status: "applied",
+        priority: 3,
+        applied_at: "",
+        last_touch_at: "",
+        next_action_at: "",
+        next_action_label: "",
+        location: "",
+        work_mode: "",
+        notes: "",
+    };
+
+    const [editInitial, setEditInitial] = useState<EditAppForm>(EMPTY_EDIT_APP);
+    const [editForm, setEditForm] = useState<EditAppForm>(EMPTY_EDIT_APP);
+
+
 
     const [filters, setFilters] = useState<ApplicationFilters>(DEFAULT_FILTERS);
 
@@ -148,6 +185,83 @@ export default function ApplicationsPage() {
             cancelled = true;
         }
     }, []);
+
+    function normalizeEditForm(app: ApplicationRow): EditAppForm {
+        return {
+            company_name: app.company_name ?? "",
+            role_title: app.role_title ?? "",
+            status: app.status,
+            priority: app.priority,
+            applied_at: app.applied_at ?? "",
+            last_touch_at: app.last_touch_at ?? "",
+            next_action_at: app.next_action_at ?? "",
+            next_action_label: app.next_action_label ?? "",
+            location: app.location ?? "",
+            work_mode: app.work_mode ?? "",
+            notes: app.notes ?? "",
+        };
+    }
+
+    function shallowEqual(a: Record<string, any>, b: Record<string, any>) {
+        const ak = Object.keys(a);
+        const bk = Object.keys(b);
+        if (ak.length !== bk.length) return false;
+        for (const k of ak) if (a[k] !== b[k]) return false;
+        return true;
+    }
+
+    function openQuickEdit(app: ApplicationRow) {
+        const norm = normalizeEditForm(app);
+        setEditInitial(norm);
+        setEditForm(norm);
+        setUpdateError(null);
+        setIsQuickEditOpen(true);
+    }
+
+    async function saveQuickEdit() {
+        if (!selected) return;
+        if (isUpdating) return;
+
+        if (shallowEqual(editInitial, editForm)) return;
+
+        setIsUpdating(true);
+        setUpdateError(null);
+
+        try {
+            const edit_appl = {
+                company_name: editForm.company_name.trim(),
+                company_name_lc: editForm.company_name.trim().toLowerCase(),
+                role_title: editForm.role_title.trim(),
+                status: editForm.status,
+                priority: Math.min(5, Math.max(1, editForm.priority || 3)),
+                applied_at: editForm.applied_at || null,
+                last_touch_at: editForm.last_touch_at || null,
+                next_action_at: editForm.next_action_at || null,
+                next_action_label: editForm.next_action_label.trim() || null,
+                location: editForm.location.trim() || null,
+                work_mode: editForm.work_mode || null,
+                notes: editForm.notes.trim() || null,
+            };
+
+            await updateDoc(doc(db, "applications", selected.id), edit_appl);
+
+            const nextRow: ApplicationRow = {
+                ...selected,
+                ...edit_appl,
+            };
+
+            setAllRows((prev) => prev.map((r) => (r.id === selected.id ? nextRow : r)));
+
+            setSelectedId(selected.id);
+
+            setIsQuickEditOpen(false);
+        } catch (e: any) {
+            console.error("Update Failed:", e);
+            setUpdateError(e?.message ?? "Update Failed.");
+        } finally {
+            setIsUpdating(false);
+        }
+    }
 
     return (
         <main className = "p-8">
@@ -304,11 +418,11 @@ export default function ApplicationsPage() {
                         <div className="flex items-start justify-between gap-3">
                             <div>
                                 <div className="text-sm text-gray-700">{selected.company_name}</div>
-                                <div className="text-lg font-semibold">{selected.role_title}</div>
+                                <div className="text-lg font-semibold text-gray-900">{selected.role_title}</div>
                             </div>
 
                             <button
-                                className="rounded-lg border px-3 py-1 text-sm hover:bg-gray-50"
+                                className="rounded-lg border px-3 py-1 text-sm hover:bg-gray-50 text-gray-900"
                                 onClick={() => setSelectedId(null)}
                                 aria-label="Close"
                                 title="Close"
@@ -328,13 +442,13 @@ export default function ApplicationsPage() {
                         <div className="mt-5 space-y-3 text-sm">
                             <div className="flex justify-between gap-4">
                                 <div>
-                                    <div className="text-gray-700">Next action:</div>
+                                    <div className="font-bold text-gray-700 underline">Next action</div>
 
                                 
                                     {selected.next_action_label ? (
                                         <div className = "mt-2 w-full text-left text-sm font-medium text-gray-900">{selected.next_action_label}</div>
                                     ) : (
-                                        <div className = "mt-2 w-full text-left text-sm italic text-gray-500"> No next action set</div>
+                                        <div className = "mt-2 w-full text-left text-sm italic text-gray-500">No next action set</div>
                                     )}
                                 </div>
                                 
@@ -347,25 +461,25 @@ export default function ApplicationsPage() {
                                 </div>
                             </div>
                             <div className="flex justify-between gap-4">
-                                <div className="text-gray-700">Last touch</div>
-                                <div className="font-medium">
+                                <div className="font-bold text-gray-700 underline">Last touch</div>
+                                <div className="font-medium text-gray-900">
                                 {selected.last_touch_at ? formatDateShort(new Date(selected.last_touch_at)) : "—"}
                                 </div>
                             </div>
                             <div className="flex justify-between gap-4">
-                                <div className="text-gray-700">Applied</div>
-                                <div className="font-medium">{selected.applied_at ?? "—"}</div>
+                                <div className="font-bold text-gray-700 underline">Applied</div>
+                                <div className="font-medium text-gray-900">{selected.applied_at ?? "—"}</div>
                             </div>
                             <div className="flex justify-between gap-4">
-                                <div className="text-gray-700">Location / Mode</div>
-                                <div className="font-medium">
+                                <div className="font-bold text-gray-700 underline">Location / Mode</div>
+                                <div className="font-medium text-gray-900">
                                 {[selected.location, selected.work_mode].filter(Boolean).join(" • ") || "—"}
                                 </div>
                             </div>
                         </div>
 
                         <div className="mt-5">
-                            <div className="text-sm font-medium">Notes</div>
+                            <div className="text-sm font-bold text-gray-900 underline">Notes</div>
 
                             {selected.notes?.trim() ? (
                                 <p className = "mt-1 whitespace-pre-wrap text-sm text-gray-700">
@@ -382,7 +496,10 @@ export default function ApplicationsPage() {
                             <Link href = {`/applications/${selected.id}`} className = "flex-1 rounded-lg bg-black px-3 py-2 text-center text-sm text-white hover:opacity-90">
                                 Open Details
                             </Link>
-                            <button className="rounded-lg border px-3 py-2 text-sm hover:bg-gray-50">
+                            <button 
+                                className="rounded-lg border px-3 py-2 text-sm hover:bg-gray-50 text-gray-900"
+                                onClick = {() => openQuickEdit(selected)}
+                            >
                                 Quick edit
                             </button>
                         </div>
@@ -473,7 +590,7 @@ export default function ApplicationsPage() {
                                     </div>
 
                                     <div>
-                                        <div className = "font-medium text-gray-700">Priority (1 - 5)</div>
+                                        <div className = "font-medium text-gray-700">Priority (1 Highest - 5 Lowest)</div>
                                         <input 
                                             type = "number"
                                             min = {1}
@@ -645,6 +762,257 @@ export default function ApplicationsPage() {
                 }
                 `}</style>
             </>
+            ) : null}
+
+            {isQuickEditOpen && selected ? (
+                <>
+                    {/* Backdrop */}
+                    <div
+                        className = "fixed inset-0 bg-black/30"
+                        onClick = {() => {
+                            if (!isUpdating) setIsQuickEditOpen(false);
+                        }}
+
+                        aria-hidden = "true"
+                    />
+
+                    {/* Sliding Pannel */}
+                    <aside className = "fixed right-0 top-0 h-full w-[520px] max-w-[95vw] border-1 bg-white shadow-xl">
+                        <div className = "h-full overflow-y-auto p-5">
+                            <div className = "flex items-start justify-between gap-3">
+                                <div>
+                                    <div className = "text-sm text-gray-900">Quick Edit</div>
+                                    <div className = "text-lg font-semibold text-gray-900">
+                                        {selected.company_name} — {selected.role_title}
+                                    </div>
+                                </div>
+
+                                <button
+                                    className = "rounded-lg border px-3 py-1 text-sm hover:bg-gray-50 text-gray-900 disabled:opacity-50"
+                                    onClick = {() => setIsQuickEditOpen(false)}
+                                    disabled = {isUpdating}
+                                    aria-label = "Close"
+                                    title = "Close"
+                                >
+                                    Close
+                                </button>
+                            </div>
+
+                            <div className = "mt-5 space-y-4 text-sm">
+                                <div>
+                                    <div className = "font-bold text-gray-900 underline">Company</div>
+                                    <input
+                                        className = "mt-1 w-full rounded-lg border px-3 py-2 text-gray-900 placeholder:text-gray-400"
+                                        value = {editForm.company_name}
+                                        onChange = {(e) =>
+                                            setEditForm((p) => ({ ...p, company_name: e.target.value }))
+                                        }
+                                        placeholder = "e.g., Google"
+                                    />
+                                </div>
+
+                                <div>
+                                    <div className = "font-bold text-gray-900 underline">Role</div>
+                                    <input
+                                        className = "mt-1 w-full rounded-lg border px-3 py-2 text-gray-900 placeholder:text-gray-400"
+                                        value = {editForm.role_title}
+                                        onChange = {(e) =>
+                                            setEditForm((p) => ({ ...p, role_title: e.target.value }))
+                                        }
+                                        placeholder = "e.g., Entry Level Software Engineer"
+                                    />
+                                </div>
+
+                                <div className = "grid grid-col-2 gap-3">
+                                    <div>
+                                        <div className = "font-bold text-gray-900 underline">Status</div>
+                                        <select
+                                            className = "mt-1 w-full rounded-lg border px-3 py-2 text-gray-900"
+                                            value = {editForm.status}
+                                            onChange = {(e) => 
+                                                setEditForm((p) => ({ ...p, status: e.target.value as ApplicationStatus }))
+                                            }
+                                        >
+                                            <option value = "draft">Draft</option>
+                                            <option value = "applied">Applied</option>
+                                            <option value = "screen">Screen</option>
+                                            <option value = "interview">Interview</option>
+                                            <option value = "offer">Offer</option>
+                                            <option value = "rejected">Rejected</option>
+                                            <option value = "withdrawn">Withdrawn</option>
+                                            <option value = "ghosted">Ghosted</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <div className = "font-bold text-gray-900 underline">Priority (1 Highest - 5 Lowest)</div>
+                                        <input
+                                            type = "number"
+                                            min = {1}
+                                            max = {5}
+                                            className = "mt-1 w-full rounded-lg border px-3 py-2 text-gray-900"
+                                            value = {editForm.priority}
+                                            onChange = {(e) =>
+                                                setEditForm((p) => ({ ...p, priority: Number(e.target.value), }))
+                                            }
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className = "grid grid-col-2 gap-3">
+                                    <div>
+                                        <div className = "font-bold text-gray-900 underline">Applied Date</div>
+                                        <input
+                                            type = "date"
+                                            className = "mt-1 w-full rounded-lg border px-3 py-2 text-gray-900"
+                                            value = {editForm.applied_at}
+                                            onChange = {(e) => 
+                                                setEditForm((p) => ({ ...p, applied_at: e.target.value }))
+                                            }
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <div className = "font-bold text-gray-900 underline">Next Action Date/Time</div>
+                                        <input
+                                            type = "datetime-local"
+                                            className = "mt-1 w-full rounded-lg border px-3 py-2 text-gray-900"
+                                            value = {editForm.next_action_at}
+                                            onChange = {(e) =>
+                                                setEditForm((p) => ({ ...p, next_action_at: e.target.value }))
+                                            }
+                                        />
+                                    </div>
+                                </div>
+
+                                <div >
+                                    <div className = "font-bold text-gray-900 underline">Next Action</div>
+                                    <input
+                                        className = "mt-1 w-full rounded-lg border px-3 py-2 text-gray-900 placeholder:text-gray-400"
+                                        value = {editForm.next_action_label}
+                                        onChange = {(e) =>
+                                            setEditForm((p) => ({ ...p, next_action_label: e.target.value }))
+                                        }
+                                        placeholder = "e.g., Recruiter screen / Follow-Up Email"
+                                    />
+                                </div>
+
+                                <div>
+                                    <div className = "font-bold text-gray-900 underline">Last Touch (date)</div>
+                                    <input
+                                        type = "date"
+                                        className = "mt-1 w-full rounded-lg border px-3 py-2 text-gray-900"
+                                        value = {editForm.last_touch_at}
+                                        onChange = {(e) => 
+                                            setEditForm((p) => ({ ...p, last_touch_at: e.target.value }))
+                                        }
+                                    />
+                                    <div className = "mt-1 text-xs text-gray-500">
+                                        Optional — set this when you email, screen, or interview
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <div className = "font-bold text-gray-900 underline">Location</div>
+                                    <input
+                                        className = "mt-1 w-full rounded-lg border px-3 py-2 text-gray-900 placeholder:text-gray-400"
+                                        value = {editForm.location}
+                                        onChange = {(e) =>
+                                            setEditForm((p) => ({ ...p, location: e.target.value }))
+                                        }
+                                        placeholder = "e.g, Dallas, TX"
+                                    />
+                                </div>
+
+                                <div>
+                                    <div className = "font-bold text-gray-900 underline">Work Mode</div>
+                                    <select
+                                        className="mt-1 w-full rounded-lg border px-3 py-2 text-gray-900"
+                                        value={editForm.work_mode}
+                                        onChange={(e) =>
+                                            setEditForm((p) => ({ ...p, work_mode: e.target.value }))
+                                        }
+                                    >
+                                        <option value="">—</option>
+                                        <option value="remote">Remote</option>
+                                        <option value="hybrid">Hybrid</option>
+                                        <option value="onsite">Onsite</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <div className = "font-bold text-gray-900 underline">Notes</div>
+                                    <textarea
+                                        className = "mt-1 w-full rounded-lg border px-3 py-2 text-gray-900 placeholder:text-gray-400"
+                                        value = {editForm.notes}
+                                        onChange = {(e) =>
+                                            setEditForm((p) => ({ ...p, notes: e.target.value }))
+                                        }
+                                        placeholder = "Add any key details . . ."
+                                    />
+                                </div>
+
+                                {updateError ? (
+                                    <div className = "rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                                        {updateError}
+                                    </div>
+                                ) : null }
+                            </div>
+                            
+                            {/* Dirty State Hit */}
+                            <div className="mt-3 text-xs text-gray-600">
+                                {shallowEqual(editInitial, editForm)
+                                    ? "No changes to save."
+                                    : "Changes ready to save."}
+                            </div>
+
+                            <div className = "mt-6 flex gap-2">
+                                <button
+                                    className = "rounded-lg border px-3 py-2 text-sm hover:opacity-gray-50 text-gray-900 disabled:opacity-50"
+                                    onClick = {() => setIsQuickEditOpen(false)}
+                                    disabled = {isUpdating}
+                                >
+                                    Cancel
+                                </button>
+
+                                <button
+                                    className = "flex-1 rounded-lg bg-black px-3 py-2 text-sm text-white hover:opacity-90 disabled:opacity-50"
+                                    disabled = {
+                                        isUpdating ||
+                                        shallowEqual(editInitial, editForm) ||
+                                        !editForm.company_name.trim() ||
+                                        !editForm.role_title.trim()
+                                    }
+                                    onClick = {saveQuickEdit}
+                                >
+                                    {isUpdating ? "Saving . . ." : "Save"}
+                                </button>
+                            </div>
+
+                            <div className = "mt-4 text-xs text-gray-700">
+                                Tip: press{" "}
+                                <span className = "rounded border bg-gray-50 px-1 py-0.5">Esc</span> to close.
+                            </div>
+                        </div>
+                    </aside>
+
+                    {/* Slide-in animation (same as your other drawers) */}
+                    <style jsx global> {`
+                        aside {
+                            animation: slideIn 160ms ease-out;
+                        }
+                        @keyframes slideIn {
+                            from {
+                                transform: translateX(12px);
+                                opacity: 0.6;
+                            }
+                            to {
+                                transform: translateX(0);
+                                opacity: 1;
+                            }
+                        }
+                    `}</style>
+                </>
             ) : null}
 
         </main>

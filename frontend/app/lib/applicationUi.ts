@@ -30,10 +30,13 @@ const PRIORITY_META: Record<
     number,
     { label: string; tone: Tone }
 > = {
-    1: { label: "Low", tone: "gray" },
-    2: { label: "Medium", tone: "yellow" },
-    3: { label: "High", tone: "red" },
+    1: { label: "Highest", tone: "red" },
+    2: { label: "High", tone: "yellow" },
+    3: { label: "Medium", tone: "blue" },
+    4: { label: "Low", tone: "gray" },
+    5: { label: "Lowest", tone: "purple" },
 };
+
 
 /* ---------- Public Helpers ---------- */
 
@@ -45,12 +48,12 @@ export function statusTone(status: ApplicationStatus): Tone {
     return STATUS_META[status]?.tone ?? "gray";
 }
 
-export function priorityLabel(priority: number) {
-    return PRIORITY_META[priority]?.label ?? "Unknown";
+export function priorityLabel(p: number) {
+    return PRIORITY_META[p]?.label ?? `P${p}`;
 }
 
-export function priorityTone(priority: number): Tone {
-    return PRIORITY_META[priority]?.tone ?? "gray";
+export function priorityTone(p: number): Tone {
+    return PRIORITY_META[p]?.tone ?? "gray";
 }
 
 function getUserTimeZone() {
